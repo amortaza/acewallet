@@ -1,14 +1,17 @@
 {
 	"name": "@amortaza/acewallet",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"description": "BCH Wallet API (Node JS)",
-	"license": "MIT",
-	"repository": "amortaza/acewallet",
+	"license" : "MIT",
+	"repository":"amortaza/acewallet",
 	"keywords": [
 		"bch",
 		"bitcoin cash",
 		"api",
 		"javascript",
 		"wallet"
-	]
+	],
+	"dependencies" : { 
+		"bitbox-sdk":"^2.2.8"
+	}
 }
