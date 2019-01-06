@@ -23,7 +23,7 @@ let wallet = new Wallet();
 ```
 
 
-### wallet.generateMnemonic() 
+## wallet.generateMnemonic() 
 
 ```
 Generates a 256-bit BIP-39 (24-word) seed phrase.
@@ -44,7 +44,7 @@ console.log( wallet.generateMnemonic() );
 // example: "mad tell hobby stomach inner focus practice aunt upon few simple improve curtain man erupt inch allow story mechanic soldier eight avoid sausage gym"
 ```
 
-### wallet.load( mnemonic, starting_ChangeAccount_Index, onWalletLoaded, onError )
+## wallet.load( mnemonic, starting_ChangeAccount_Index, onWalletLoaded, onError )
 
 ```
 Loads a wallet with a given mnemonic (24-word BIP-39 seed phrase).
@@ -85,7 +85,7 @@ wallet.load(
 );
 ```
 
-### wallet.reload( onWalletLoaded, onError )
+## wallet.reload( onWalletLoaded, onError )
 
 ```
 Reloads a wallet with same parameters as original wallet.
@@ -123,7 +123,7 @@ wallet.load(
 );
 ```
 
-### wallet.getBalance()
+## wallet.getBalance()
 
 ```
 Returns the number of satoshis in the balance of the wallet.  It includes both confirmed and unconfirmed satoshis.
@@ -140,7 +140,7 @@ console.log( 'Wallet balance is ' + wallet.getBalance() );
 
 ```
 
-### wallet.send( to_cashaddress, satoshis, onSuccess, onError )
+## wallet.send( to_cashaddress, satoshis, onSuccess, onError )
 
 ```
 Send `satoshis` number of satoshis from wallet to the BCH CashAddress format `to_cashaddress`. 
@@ -178,7 +178,7 @@ wallet.load(
 );
 ```
 
-### wallet.fetch_ReceiveCashAddress( onSuccess( cashaddress ), onError )
+## wallet.fetch_ReceiveCashAddress( onSuccess( cashaddress ), onError )
 
 ```
 Fetches the next `cashaddress` that can be used to fund the wallet.  Note the function does not return any values. The address is accessed via `onSuccess()` callback.
