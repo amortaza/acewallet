@@ -5,9 +5,9 @@ let WAIT_MS = 100;
 
 exports.AddressUTXO = function() {
 
-	// public methods
-	// load( account, address_index_into_account, onSuccess <see _load>, onError )
-	this.load = _load;
+    // public methods
+    // load( account, address_index_into_account, onSuccess <see _load>, onError )
+    this.load = _load;
 };
 
 // Definition of struct Address_IO - struct used to keep track of transaction Inputs and Outputs for an address.
@@ -16,195 +16,194 @@ exports.AddressUTXO = function() {
 // onSuccess( utxo, tx_appearances_confirmed_and_not, satoshis_confirmed_and_not ) - "utxo" is of type struct Address_IO[].
 function _load( account, address_index_into_account, onSuccess, onError ) {
 
-	let address_node = account.derivePath(`${address_index_into_account}`);
-	let cashaddress = BITBOX.HDNode.toCashAddress( address_node );
-	let keypair = BITBOX.HDNode.toKeyPair( address_node );
+    let address_node = account.derivePath(`${address_index_into_account}`);
+    let cashaddress = BITBOX.HDNode.toCashAddress( address_node );
+    let keypair = BITBOX.HDNode.toKeyPair( address_node );
 
     BITBOX.Address.details( cashaddress ).then(
 
-    	(result) => {
+        (result) => {
 
-    		console.log( result );
+            console.log( result );
 
-    		let appearances_ConfirmedOrNot = result.txApperances + result.unconfirmedTxApperances;
-    		let satoshis_ConfirmedOrNot = result.balanceSat + result.unconfirmedBalanceSat;
+            let appearances_ConfirmedOrNot = result.txApperances + result.unconfirmedTxApperances;
+            let satoshis_ConfirmedOrNot = result.balanceSat + result.unconfirmedBalanceSat;
 
-    		// we have reached an unused address.  stop!
-        	if ( result.txApperances === 0 && result.unconfirmedTxApperances === 0 ) {
+            // we have reached an unused address.  stop!
+            if ( result.txApperances === 0 && result.unconfirmedTxApperances === 0 ) {
 
-        		onSuccess( [], appearances_ConfirmedOrNot, satoshis_ConfirmedOrNot );
+                onSuccess( [], appearances_ConfirmedOrNot, satoshis_ConfirmedOrNot );
 
-        		return;
-        	}
+                return;
+            }
 
-    		Load_AddressResult_input_outputs( 
+            Load_AddressResult_input_outputs( 
 
-    			result, 
+                result, 
 
-    			keypair,
+                keypair,
 
-    			function( address_txoutput_list, address_txinput_list ) {
+                function( address_txoutput_list, address_txinput_list ) {
 
-    				let unspent_tx_outputs = Filter_UnspentOutputs( address_txoutput_list, 
-    																address_txinput_list );
+                    let unspent_tx_outputs = Filter_UnspentOutputs( address_txoutput_list, 
+                                                                    address_txinput_list );
 
-    				console.log( unspent_tx_outputs );
+                    console.log( unspent_tx_outputs );
 
-    				onSuccess(	unspent_tx_outputs, 
-    							appearances_ConfirmedOrNot, 
-    							satoshis_ConfirmedOrNot ); 
-	        	}, 
+                    onSuccess(  unspent_tx_outputs, 
+                                appearances_ConfirmedOrNot, 
+                                satoshis_ConfirmedOrNot ); 
+                }, 
 
-	        	onError 
-	        );
-		},
+                onError 
+            );
+        },
 
-      	onError
-	);
+        onError
+    );
 }
 
 // onSuccess( address_txoutput_list, address_txinput_list ) - both parameters are of type struct Address_IO[].
 function Load_AddressResult_input_outputs( addressResult, keypair, onSuccess, onError ) {
 
-	// these are the "return values" - parameters to onSuccess.
-	let address_txoutput_list = []; // type of struct Address_IO[].
-	let address_txinput_list  = []; // type of struct Address_IO[].
+    // these are the "return values" - parameters to onSuccess.
+    let address_txoutput_list = []; // type of struct Address_IO[].
+    let address_txinput_list  = []; // type of struct Address_IO[].
 
-	let legacy = addressResult.legacyAddress;
-	let txs = addressResult.transactions;
+    let legacy = addressResult.legacyAddress;
+    let txs = addressResult.transactions;
 
-	loadTx_input_outputs( 0 );
+    loadTx_input_outputs( 0 );
 
-	function loadTx_input_outputs( txIndex ) {
+    function loadTx_input_outputs( txIndex ) {
 
-		if ( txIndex >= txs.length ) {
+        if ( txIndex >= txs.length ) {
 
-			let msg = 'Error: vout of address not found.';
-			console.log( msg );
+            let msg = 'Error: vout of address not found.';
+            console.log( msg );
 
-			onError( msg );
+            onError( msg );
 
-			return;
-		}
+            return;
+        }
 
-		let txid = txs[ txIndex ];
+        let txid = txs[ txIndex ];
 
-		BITBOX.Transaction.details( txid ).then(
+        BITBOX.Transaction.details( txid ).then(
 
-			(result) => {
+            (result) => {
 
-				console.log( result );
+                console.log( result );
 
-	    		let confirmed = result.confirmations > 0;
+                let confirmed = result.confirmations > 0;
 
-	    		filterVouts( result.vout, confirmed );
-	    		filterVins( result.vin, confirmed );
+                filterVouts( result.vout, confirmed );
+                filterVins( result.vin, confirmed );
 
-	    		if ( txIndex < txs.length - 1 ) {
+                if ( txIndex < txs.length - 1 ) {
 
-	    			setTimeout( function() {        			
+                    setTimeout( function() {                    
 
-	        			loadTx_input_outputs( txIndex + 1 );
+                        loadTx_input_outputs( txIndex + 1 );
 
-	        		}, WAIT_MS );
-	    		}
+                    }, WAIT_MS );
+                }
 
-	    		if ( txIndex === txs.length - 1 ) {
-	    			
-	    			onSuccess( address_txoutput_list, address_txinput_list );
-	    		}
-	  		}, 
+                if ( txIndex === txs.length - 1 ) {
+                    
+                    onSuccess( address_txoutput_list, address_txinput_list );
+                }
+            }, 
 
-	  		onError
-	  	);
+            onError
+        );
 
-	  	function filterVouts( vouts, confirmed ) {
+        function filterVouts( vouts, confirmed ) {
 
-			for ( let i = 0; i < vouts.length; i++ ) {
+            for ( let i = 0; i < vouts.length; i++ ) {
 
-				let vout = vouts[ i ];
+                let vout = vouts[ i ];
 
-				if ( hasAddress_vout( vout, legacy ) ) {
+                if ( hasAddress_vout( vout, legacy ) ) {
 
-					address_txoutput_list.push( {
-						cashaddress: addressResult.cashAddress,
-						txid,
-						vout_n: vout.n,
-						satoshis: BITBOX.BitcoinCash.toSatoshi( vout.value ), 
-						confirmed,
-						keypair
-					});
+                    address_txoutput_list.push( {
+                        cashaddress: addressResult.cashAddress,
+                        txid,
+                        vout_n: vout.n,
+                        satoshis: BITBOX.BitcoinCash.toSatoshi( vout.value ), 
+                        confirmed,
+                        keypair
+                    });
 
-					// console.log( addressResult.cashAddress + ' ( vout ' + vout.n + ' )' );
-				}
-			}
-	  	}
+                    // console.log( addressResult.cashAddress + ' ( vout ' + vout.n + ' )' );
+                }
+            }
+        }
 
-	  	function hasAddress_vout( vout, legacy ) {
+        function hasAddress_vout( vout, legacy ) {
 
-	  		if ( !vout.scriptPubKey ) return false;
-	  		if ( !vout.scriptPubKey.addresses ) return false;
+            if ( !vout.scriptPubKey ) return false;
+            if ( !vout.scriptPubKey.addresses ) return false;
 
-	  		let addresses = vout.scriptPubKey.addresses;
+            let addresses = vout.scriptPubKey.addresses;
 
-	  		for ( var i = 0; i < addresses.length; i++ ) {
+            for ( var i = 0; i < addresses.length; i++ ) {
 
-	  			let address = addresses[ i ];
+                let address = addresses[ i ];
 
-	  			if ( address === legacy ) return true;
-	  		}
+                if ( address === legacy ) return true;
+            }
 
-	  		return false;
-	  	}
+            return false;
+        }
 
-	  	function filterVins( vins, confirmed ) {
+        function filterVins( vins, confirmed ) {
 
-			for ( let i = 0; i < vins.length; i++ ) {
+            for ( let i = 0; i < vins.length; i++ ) {
 
-				let vin = vins[ i ];
+                let vin = vins[ i ];
 
-				if ( vin.legacyAddress === legacy ) {
+                if ( vin.legacyAddress === legacy ) {
 
-					address_txinput_list.push( {
-						cashaddress: addressResult.cashAddress,
-						txid,
-						vout_n: vin.vout,
-						satoshis: vin.value, 
-						confirmed
-					});
-				}
-			}
-	  	}
-
-	}
+                    address_txinput_list.push( {
+                        cashaddress: addressResult.cashAddress,
+                        txid,
+                        vout_n: vin.vout,
+                        satoshis: vin.value, 
+                        confirmed
+                    });
+                }
+            }
+        }
+    }
 }
 
 function Filter_UnspentOutputs( outputs, inputs ) {
 
-	let utxo = [];
+    let utxo = [];
 
-	for ( let i = 0; i < outputs.length; i++ ) {
+    for ( let i = 0; i < outputs.length; i++ ) {
 
-		let output = outputs[ i ];
+        let output = outputs[ i ];
 
-		if ( !isSpent( output, inputs ) ) utxo.push( output );
-	}
+        if ( !isSpent( output, inputs ) ) utxo.push( output );
+    }
 
-	return utxo;
+    return utxo;
 
-	function isSpent( output, inputs ) {
+    function isSpent( output, inputs ) {
 
-		for ( let i = 0; i < inputs.length; i++ ) {
+        for ( let i = 0; i < inputs.length; i++ ) {
 
-			let input = inputs[ i ];
+            let input = inputs[ i ];
 
-			if ( input.cashaddress !== output.cashaddress ) continue;
-			if ( input.vout_n !== output.vout_n ) continue;
+            if ( input.cashaddress !== output.cashaddress ) continue;
+            if ( input.vout_n !== output.vout_n ) continue;
 
-			return true;
-	  	}
+            return true;
+          }
 
-	  	return false;
-	}
+          return false;
+    }
 }
 

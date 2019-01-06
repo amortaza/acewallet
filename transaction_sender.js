@@ -5,143 +5,143 @@ let FEE_SAT_PER_BYTE = 1;
 
 exports.TransactionSender = function() {
 
-	// public methods
+    // public methods
 
-	// send( to_cashaddress, satoshis, wallet_utxo_list, change_addressGenerator, onSuccess, onError )
-	this.send = _send;
+    // send( to_cashaddress, satoshis, wallet_utxo_list, change_addressGenerator, onSuccess, onError )
+    this.send = _send;
 };
 
 function _send( 
-	to_cashaddress, 
-	satoshis, 	
-	wallet_utxo_list,
-	change_addressGenerator,
-	onSuccess, 
-	onError ) 
+    to_cashaddress, 
+    satoshis,     
+    wallet_utxo_list,
+    change_addressGenerator,
+    onSuccess, 
+    onError ) 
 {
-	// funding is of type { utxo_list, fees, total }
-	let funding = Collect_FundingInputs( wallet_utxo_list, satoshis );
+    // funding is of type { utxo_list, fees, total }
+    let funding = Collect_FundingInputs( wallet_utxo_list, satoshis );
 
-	if ( funding.utxo_list.length === 0 ) {
+    if ( funding.utxo_list.length === 0 ) {
 
-		let msg = 'INSUFFICIENT_FUNDS for ' + satoshis + ' satoshis - we have ' + funding.total + ' satoshis (fees were ' + funding.fees + ')';
-		console.log( msg );
+        let msg = 'INSUFFICIENT_FUNDS for ' + satoshis + ' satoshis - we have ' + funding.total + ' satoshis (fees were ' + funding.fees + ')';
+        console.log( msg );
 
-		onError( msg, funding );
+        onError( msg, funding );
 
-		return;
-	}
+        return;
+    }
 
-	Send( funding, to_cashaddress, satoshis, change_addressGenerator, onSuccess, onError);
+    Send( funding, to_cashaddress, satoshis, change_addressGenerator, onSuccess, onError);
 }
 
 function Send( funding, to_cashaddress, satoshis, change_addressGenerator, onSuccess, onError ) {
 
-	let transactionBuilder = new BITBOX.TransactionBuilder("bitcoincash");
+    let transactionBuilder = new BITBOX.TransactionBuilder("bitcoincash");
 
-	let utxo_list = funding.utxo_list;
+    let utxo_list = funding.utxo_list;
 
-	for ( let i = 0; i < utxo_list.length; i++ ) {
+    for ( let i = 0; i < utxo_list.length; i++ ) {
 
-		let utxo = utxo_list[ i ];
+        let utxo = utxo_list[ i ];
 
-		addInput( utxo );
-	}
+        addInput( utxo );
+    }
 
-	transactionBuilder.addOutput( to_cashaddress, satoshis );
+    transactionBuilder.addOutput( to_cashaddress, satoshis );
 
-	addChange();
+    addChange();
 
-	for ( let i = 0; i < utxo_list.length; i++) {
+    for ( let i = 0; i < utxo_list.length; i++) {
 
-		let utxo = utxo_list[ i ];
+        let utxo = utxo_list[ i ];
 
-		signInput( i, transactionBuilder, utxo );
-	}
+        signInput( i, transactionBuilder, utxo );
+    }
 
-	let tx = transactionBuilder.build();
-	let hex = tx.toHex();
+    let tx = transactionBuilder.build();
+    let hex = tx.toHex();
 
-	BITBOX.RawTransactions.sendRawTransaction( hex ).then( onSuccess, onError );
+    BITBOX.RawTransactions.sendRawTransaction( hex ).then( onSuccess, onError );
 
-	function signInput(	indexIntoTransaction, transactionBuilder, utxo ) {
+    function signInput(    indexIntoTransaction, transactionBuilder, utxo ) {
 
-	    let redeemScript;
+        let redeemScript;
 
-	    transactionBuilder.sign(
-			indexIntoTransaction,
-			utxo.keypair,
-			redeemScript,
-			transactionBuilder.hashTypes.SIGHASH_ALL,
-			utxo.satoshis
-		);
-	}
+        transactionBuilder.sign(
+            indexIntoTransaction,
+            utxo.keypair,
+            redeemScript,
+            transactionBuilder.hashTypes.SIGHASH_ALL,
+            utxo.satoshis
+        );
+    }
 
-	function addChange() {
+    function addChange() {
 
-		// calculate change
-		let changeSatoshis = funding.total - funding.fees - satoshis;
+        // calculate change
+        let changeSatoshis = funding.total - funding.fees - satoshis;
 
-		if ( changeSatoshis === 0 ) return;
+        if ( changeSatoshis === 0 ) return;
 
-		let change_cashaddress = change_addressGenerator.get_NextCashAddress();
+        let change_cashaddress = change_addressGenerator.get_NextCashAddress();
 
-		console.log('Sending change to ' + change_cashaddress + ' ( ' + changeSatoshis + ' )');
+        console.log('Sending change to ' + change_cashaddress + ' ( ' + changeSatoshis + ' )');
 
-		transactionBuilder.addOutput( change_cashaddress, changeSatoshis );
-	}
+        transactionBuilder.addOutput( change_cashaddress, changeSatoshis );
+    }
 
-	function addInput( utxo ) {
+    function addInput( utxo ) {
 
-	    let vout_txid = utxo.txid;
-	    let vout_n    = utxo.vout_n;
+        let vout_txid = utxo.txid;
+        let vout_n    = utxo.vout_n;
 
-		transactionBuilder.addInput( vout_txid, vout_n );
-	}
+        transactionBuilder.addInput( vout_txid, vout_n );
+    }
 }
 
 function Collect_FundingInputs( wallet_utxo_list, satoshis ) {
 
-	let funding_utxo_list = [];
-	let funding_total = 0;
+    let funding_utxo_list = [];
+    let funding_total = 0;
 
-	for ( let i = 0; i < wallet_utxo_list.length; i++ ) {
+    for ( let i = 0; i < wallet_utxo_list.length; i++ ) {
 
-		// utxo is { cashaddress, txid, vout_n, satoshis, confirmed }
-		let utxo = wallet_utxo_list[ i ];
+        // utxo is { cashaddress, txid, vout_n, satoshis, confirmed }
+        let utxo = wallet_utxo_list[ i ];
 
-		if ( utxo.satoshis > 0 ) {
+        if ( utxo.satoshis > 0 ) {
 
-			funding_utxo_list.push( utxo );
+            funding_utxo_list.push( utxo );
 
-			funding_total += utxo.satoshis;
+            funding_total += utxo.satoshis;
 
-			let fees = CalcFees( funding_utxo_list.length );			
+            let fees = CalcFees( funding_utxo_list.length );            
 
-			// have we funded enough to cover the satoshis we want to send AND the fees?
-			let minimum_funding_needed = satoshis + fees;
+            // have we funded enough to cover the satoshis we want to send AND the fees?
+            let minimum_funding_needed = satoshis + fees;
 
-			if ( funding_total >= minimum_funding_needed ) break;
-		}
-	}
+            if ( funding_total >= minimum_funding_needed ) break;
+        }
+    }
 
-	// final check to see if we have enough funding
-	let fees = CalcFees( funding_utxo_list.length );			
-	let minimum_funding_needed = satoshis + fees;
+    // final check to see if we have enough funding
+    let fees = CalcFees( funding_utxo_list.length );            
+    let minimum_funding_needed = satoshis + fees;
 
-	if ( funding_total < minimum_funding_needed ) funding_utxo_list = [];
+    if ( funding_total < minimum_funding_needed ) funding_utxo_list = [];
 
-	return { utxo_list: funding_utxo_list, fees, total: funding_total };
+    return { utxo_list: funding_utxo_list, fees, total: funding_total };
 }
 
 function CalcFees( inputCount ) {
 
-	let byteCount = BITBOX.BitcoinCash.getByteCount(
-      	{ P2PKH: inputCount },
-      	{ P2PKH: 2 } // for fee purposes, we will always assume there will be change address and destination address
+    let byteCount = BITBOX.BitcoinCash.getByteCount(
+          { P2PKH: inputCount },
+          { P2PKH: 2 } // for fee purposes, we will always assume there will be change address and destination address
     );
 
-	let fees = FEE_SAT_PER_BYTE * byteCount;
+    let fees = FEE_SAT_PER_BYTE * byteCount;
 
-	return fees;
+    return fees;
 }
